@@ -1,0 +1,7 @@
+[Unit]
+Description=periodic-audit service
+
+[Service]
+ExecStart=/opt/periodic-audit/bin/periodic-audit
+RuntimeDirectory=periodic-audit
+WorkingDirectory=%t/periodic-audit

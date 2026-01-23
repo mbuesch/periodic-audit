@@ -1,0 +1,35 @@
+# -*- coding: utf-8 -*-
+
+[package]
+name = "periodic-audit"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+license = "MIT OR Apache-2.0"
+authors = [ "Michael Büsch <m@bues.ch>" ]
+repository = "https://github.com/mbuesch/periodic-audit"
+readme = "README.md"
+categories = [ ]
+keywords = [ ]
+publish = false
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = [ "derive", "wrap_help", "unicode" ] }
+lettre = "0.11"
+serde = { version = "1", features = [ "derive" ] }
+serde_json = "1"
+tokio = { version = "1", features = [ "rt", "fs", "process", "time" ] }
+toml = { version = "0.9", features = [ "serde" ] }
+
+[profile.dev]
+debug = "limited"
+panic = "abort"
+
+[profile.release]
+lto = "fat"
+panic = "abort"
+strip = "symbols"
+overflow-checks = true
+
+# vim: ts=4 sw=4 expandtab
