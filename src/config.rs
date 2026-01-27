@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use tokio::fs;
 
 #[cfg(not(target_os = "windows"))]
-const CONF_PATH: &str = "etc/periodic-audit.conf";
+const CONF_PATH: &str = "etc/periodic-audit/periodic-audit.conf";
 #[cfg(target_os = "windows")]
 const CONF_PATH: &str = "periodic-audit.conf";
 
