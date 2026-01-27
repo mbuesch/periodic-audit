@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 // Copyright (C) 2026 Michael Büsch <m@bues.ch>
 
-use crate::{audit::audit_binaries, config::Config, mail::send_report};
+use crate::{
+    audit::audit_binaries, config::Config, mail::send_report, systemd::systemd_notify_ready,
+};
 use anyhow::{self as ah, Context as _};
 use clap::Parser;
 use std::{path::PathBuf, sync::Arc, time::Duration};
@@ -12,6 +14,7 @@ mod audit;
 mod config;
 mod mail;
 mod report;
+mod systemd;
 
 #[derive(Parser, Debug, Clone)]
 struct Opts {
@@ -41,6 +44,9 @@ async fn async_main(opts: Arc<Opts>) -> ah::Result<()> {
         "Load configuration file '{}'",
         opts.get_config().display()
     ))?;
+
+    // Notify systemd that we are ready.
+    systemd_notify_ready().context("Notify systemd ready")?;
 
     // Run cargo-audit on the specified paths, retrying on failure.
     let mut tries = 0_u32;

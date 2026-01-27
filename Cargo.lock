@@ -657,6 +657,7 @@ dependencies = [
  "anyhow",
  "clap",
  "lettre",
+ "sd-notify",
  "serde",
  "serde_json",
  "tokio",
@@ -750,6 +751,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "891d81b926048e76efe18581bf793546b4c0eaf8448d72be8de2bbee5fd166e1"
 dependencies = [
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "sd-notify"
+version = "0.4.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b943eadf71d8b69e661330cb0e2656e31040acf21ee7708e2c238a0ec6af2bf4"
+dependencies = [
+ "libc",
 ]
 
 [[package]]
