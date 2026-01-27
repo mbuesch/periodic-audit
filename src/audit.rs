@@ -122,8 +122,7 @@ pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Re
             .env_remove("COLORTERM")
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .current_dir("/");
+            .stderr(Stdio::piped());
         let out = cmd.output().await.map_err(|e| {
             report.fail(format!(
                 "Error executing cargo-audit ({}): {}",

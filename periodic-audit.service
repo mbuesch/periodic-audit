@@ -2,8 +2,16 @@
 Description=periodic-audit service
 
 [Service]
+#Type=notify
+#NotifyAccess=main
 ExecStart=/opt/periodic-audit/bin/periodic-audit
 RuntimeDirectory=periodic-audit
+RuntimeDirectoryMode=0750
 StateDirectory=periodic-audit
 StateDirectoryMode=0750
 WorkingDirectory=%t/periodic-audit
+StandardOutput=journal
+StandardError=journal
+User=periodic-audit
+Group=periodic-audit
+Nice=10
