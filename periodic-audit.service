@@ -4,4 +4,6 @@ Description=periodic-audit service
 [Service]
 ExecStart=/opt/periodic-audit/bin/periodic-audit
 RuntimeDirectory=periodic-audit
+StateDirectory=periodic-audit
+StateDirectoryMode=0750
 WorkingDirectory=%t/periodic-audit

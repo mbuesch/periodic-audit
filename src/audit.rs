@@ -107,10 +107,15 @@ pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Re
         report.add_message("WARNING: No existing paths to audit; cargo-audit skipped.".to_string());
     } else {
         // Execute cargo-audit
-        let out = Command::new(&config.cargo_audit.exe)
+        let mut cmd = Command::new(&config.cargo_audit.exe);
+        let mut cmd = cmd
             .arg("audit")
             .args(["--deny", "warnings"])
-            .args(["--format", "json"])
+            .args(["--format", "json"]);
+        if let Some(db_path) = &config.cargo_audit.db {
+            cmd = cmd.arg("--db").arg(db_path)
+        }
+        cmd = cmd
             .arg("bin")
             .args(&bins)
             .env_remove("TERM")
@@ -118,16 +123,14 @@ pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Re
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
-            .current_dir("/")
-            .output()
-            .await
-            .map_err(|e| {
-                report.fail(format!(
-                    "Error executing cargo-audit ({}): {}",
-                    config.cargo_audit.exe.display(),
-                    e
-                ))
-            })?;
+            .current_dir("/");
+        let out = cmd.output().await.map_err(|e| {
+            report.fail(format!(
+                "Error executing cargo-audit ({}): {}",
+                config.cargo_audit.exe.display(),
+                e
+            ))
+        })?;
 
         // Parse cargo-audit output
         let stdout = String::from_utf8(out.stdout)
@@ -173,7 +176,7 @@ pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Re
         let stderr = String::from_utf8(out.stderr)
             .map_err(|e| report.fail(format!("Parse cargo-audit stderr as UTF-8: {}", e)))?;
         if !stderr.trim().is_empty() {
-            report.add_message(format!("stderr:\n{}", stderr));
+            report.add_message(format!("cargo-audit stderr:\n{}", stderr));
         }
     }
 

@@ -37,6 +37,7 @@ pub struct ConfigCargoAudit {
     pub exe: PathBuf,
     pub debug: Option<bool>,
     pub tries: Option<u32>,
+    pub db: Option<PathBuf>,
 }
 
 impl ConfigCargoAudit {
