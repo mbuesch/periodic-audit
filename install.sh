@@ -60,8 +60,8 @@ install_periodic_audit()
         "$basedir/periodic-audit.timer" \
         /etc/systemd/system/
 
-    do_systemctl enable periodic-audit.service
-    do_systemctl enable periodic-audit.timer
+    #do_systemctl enable periodic-audit.service
+    #do_systemctl enable periodic-audit.timer
 }
 
 release="release"
@@ -87,6 +87,6 @@ disable_services
 install_dirs
 install_conf
 install_periodic_audit
-start_services
+#start_services
 
 # vim: ts=4 sw=4 expandtab
