@@ -162,8 +162,6 @@ pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Re
                 .and_then(|v| v.as_bool())
                 .unwrap_or(false);
 
-            //TODO: extract more detailed info?
-
             report.add(ReportEntry {
                 path,
                 vulnerable,

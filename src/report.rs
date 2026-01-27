@@ -78,6 +78,11 @@ impl std::fmt::Display for Report {
         for msg in self.messages() {
             writeln!(f, "{msg}")?;
         }
+        if !self.failed() {
+            for entry in self.entries().iter().filter(|e| e.vulnerable) {
+                writeln!(f, "\n\n{}:\n{}", entry.path.display(), entry.json)?;
+            }
+        }
         Ok(())
     }
 }
