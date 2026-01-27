@@ -37,9 +37,10 @@ impl Opts {
 
 async fn async_main(opts: Arc<Opts>) -> ah::Result<()> {
     // Load the configuration file.
-    let conf = Config::load(&opts.get_config())
-        .await
-        .context("Read and parse configuration file")?;
+    let conf = Config::load(&opts.get_config()).await.context(format!(
+        "Load configuration file '{}'",
+        opts.get_config().display()
+    ))?;
 
     // Run cargo-audit on the specified paths, retrying on failure.
     let mut tries = 0_u32;
