@@ -62,6 +62,7 @@ impl Report {
 
 impl std::fmt::Display for Report {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Summary
         if self.failed() {
             writeln!(f, "Audit FAILED.")?;
         } else {
@@ -76,9 +77,13 @@ impl std::fmt::Display for Report {
             }
             writeln!(f)?;
         }
+
+        // Log messages
         for msg in self.messages() {
             writeln!(f, "{msg}")?;
         }
+
+        // Vulnerability details
         if !self.failed() {
             for entry in self.entries().iter().filter(|e| e.vulnerable) {
                 writeln!(f, "\n\n{}:\n{}", entry.path.display(), entry.json_pretty)?;
