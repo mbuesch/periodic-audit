@@ -87,6 +87,7 @@ disable_services
 install_dirs
 install_conf
 install_periodic_audit
+do_systemctl daemon-reload
 #start_services
 
 # vim: ts=4 sw=4 expandtab

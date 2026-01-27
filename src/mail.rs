@@ -17,7 +17,7 @@ pub fn send_report(config: &Config, report: &Report) -> ah::Result<()> {
         if report.failed() {
             "[AUDIT FAILED] "
         } else if report.vulnerable() {
-            "[VULNERABILITIES FOUND]"
+            "[VULNERABILITIES FOUND] "
         } else {
             ""
         },
