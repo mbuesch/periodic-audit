@@ -9,6 +9,7 @@ pub struct ReportEntry {
     pub path: PathBuf,
     pub vulnerable: bool,
     pub json: String,
+    pub json_pretty: String,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -80,7 +81,7 @@ impl std::fmt::Display for Report {
         }
         if !self.failed() {
             for entry in self.entries().iter().filter(|e| e.vulnerable) {
-                writeln!(f, "\n\n{}:\n{}", entry.path.display(), entry.json)?;
+                writeln!(f, "\n\n{}:\n{}", entry.path.display(), entry.json_pretty)?;
             }
         }
         Ok(())

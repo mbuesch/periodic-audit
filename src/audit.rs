@@ -147,14 +147,12 @@ pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Re
             let audit_result: json::Value = json::from_str(json_part.trim())
                 .map_err(|e| report.fail(format!("Parse cargo-audit JSON output: {}", e)))?;
 
+            let json_pretty = json::to_string_pretty(&audit_result)
+                .map_err(|e| report.fail(format!("Format cargo-audit JSON output: {}", e)))?;
+
             if config.cargo_audit.debug() {
                 println!("\n\naudit result for {}:", path.display());
-                println!(
-                    "{}",
-                    json::to_string_pretty(&audit_result).map_err(|e| {
-                        report.fail(format!("Format cargo-audit JSON output: {}", e))
-                    })?
-                );
+                println!("{json_pretty}");
             }
 
             let vulnerable = audit_result
@@ -166,6 +164,7 @@ pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Re
                 path,
                 vulnerable,
                 json: json_part,
+                json_pretty,
             })
         }
 
