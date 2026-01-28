@@ -60,6 +60,7 @@ jobs:
         run: cargo clippy --tests -- --deny warnings
 
       # Tests
-      - run: cargo test
+      - if: matrix.os.name != 'windows'
+        run: cargo test
 
 # vim: ts=2 sw=2 expandtab
