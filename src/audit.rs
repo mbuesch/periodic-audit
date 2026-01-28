@@ -8,8 +8,11 @@ use crate::{
 };
 use anyhow as ah;
 use serde_json as json;
-use std::{os::unix::fs::PermissionsExt as _, path::PathBuf, process::Stdio};
+use std::{path::PathBuf, process::Stdio};
 use tokio::{fs::read_dir, process::Command};
+
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt as _;
 
 fn split_json_parts(input: &str) -> Vec<String> {
     let mut parts = Vec::with_capacity((input.len() / 64).max(1));
@@ -122,9 +125,17 @@ pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Re
                                 p.display(),
                             ))
                         })?;
-                        let mode = meta.permissions().mode();
-                        const EXECUTABLE: u32 = 0o111;
-                        if !meta.is_dir() && ((mode & EXECUTABLE) != 0) {
+
+                        #[cfg(unix)]
+                        let add = {
+                            const EXECUTABLE: u32 = 0o111;
+                            !meta.is_dir() && (meta.permissions().mode() & EXECUTABLE) != 0
+                        };
+
+                        #[cfg(not(unix))]
+                        let add = !meta.is_dir();
+
+                        if add {
                             bins.push(e.path());
                         }
                     }
