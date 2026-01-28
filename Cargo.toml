@@ -2,15 +2,16 @@
 
 [package]
 name = "periodic-audit"
-version = "0.1.0"
+description = "A tool to run cargo-audit periodically and send email reports."
+version = "1.0.0"
 edition = "2024"
 rust-version = "1.88"
 license = "MIT OR Apache-2.0"
 authors = [ "Michael Büsch <m@bues.ch>" ]
 repository = "https://github.com/mbuesch/periodic-audit"
 readme = "README.md"
-categories = [ ]
-keywords = [ ]
+categories = [ "security", "command-line-utilities" ]
+keywords = [ "cargo-audit", "security", "email", "report" ]
 publish = false
 
 [dependencies]
