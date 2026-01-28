@@ -45,9 +45,6 @@ async fn async_main(opts: Arc<Opts>) -> ah::Result<()> {
         opts.get_config().display()
     ))?;
 
-    // Notify systemd that we are ready.
-    systemd_notify_ready().context("Notify systemd ready")?;
-
     // Run cargo-audit on the specified paths, retrying on failure.
     let mut tries = 0_u32;
     let report = loop {
@@ -74,6 +71,9 @@ async fn async_main(opts: Arc<Opts>) -> ah::Result<()> {
 
     // Send the report e-mail.
     send_report(&conf, &report).context("Send report e-mail")?;
+
+    // Notify systemd that we are ready.
+    systemd_notify_ready().context("Notify systemd ready")?;
 
     Ok(())
 }
