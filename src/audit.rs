@@ -14,17 +14,55 @@ use tokio::{fs::read_dir, process::Command};
 fn split_json_parts(input: &str) -> Vec<String> {
     let mut parts = Vec::with_capacity((input.len() / 64).max(1));
     let mut part = String::with_capacity(input.len());
+
     let mut indent = 0_i32;
+    let mut in_string = false;
+    let mut escape = false;
+
     for c in input.chars() {
+        if escape {
+            part.push(c);
+            escape = false;
+            continue;
+        }
+
         match c {
+            '\\' => {
+                if in_string {
+                    escape = true;
+                    part.push(c);
+                } else {
+                    part.push(c);
+                }
+            }
+            '"' => {
+                part.push(c);
+                in_string = !in_string;
+            }
             '{' => {
-                indent += 1;
+                if !in_string {
+                    indent += 1;
+                }
                 part.push(c);
             }
             '}' => {
-                indent -= 1;
                 part.push(c);
-                if indent <= 0 {
+                if !in_string {
+                    indent -= 1;
+                    if indent <= 0 {
+                        let ptrim = part.trim();
+                        if !ptrim.is_empty() {
+                            parts.push(ptrim.to_string());
+                        }
+                        part.clear();
+                        indent = 0;
+                    }
+                }
+            }
+            '\n' => {
+                if in_string {
+                    part.push(c);
+                } else {
                     let ptrim = part.trim();
                     if !ptrim.is_empty() {
                         parts.push(ptrim.to_string());
@@ -33,21 +71,17 @@ fn split_json_parts(input: &str) -> Vec<String> {
                     indent = 0;
                 }
             }
-            '\n' => {
-                let ptrim = part.trim();
-                if !ptrim.is_empty() {
-                    parts.push(ptrim.to_string());
-                }
-                part.clear();
-                indent = 0;
-            }
             _ => {
-                if indent > 0 {
-                    part.push(c);
-                }
+                part.push(c);
             }
         }
     }
+
+    let ptrim = part.trim();
+    if !ptrim.is_empty() {
+        parts.push(ptrim.to_string());
+    }
+
     parts
 }
 
