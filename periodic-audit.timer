@@ -2,8 +2,9 @@
 Description=periodic-audit timer
 
 [Timer]
-OnCalendar=hourly
+OnCalendar=daily
 Persistent=true
+RandomizedDelaySec=1h
 Unit=periodic-audit.service
 
 [Install]
