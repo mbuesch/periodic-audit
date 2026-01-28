@@ -14,6 +14,8 @@ mod audit;
 mod config;
 mod mail;
 mod report;
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
 mod systemd;
 
 #[derive(Parser, Debug, Clone)]
@@ -21,6 +23,11 @@ struct Opts {
     /// Override the default path to the configuration file.
     #[arg(short, long)]
     config: Option<PathBuf>,
+
+    /// No systemd notification, even if running under systemd.
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[arg(long)]
+    no_systemd: bool,
 
     /// Show version information and exit.
     #[arg(long, short = 'v')]
@@ -79,7 +86,10 @@ async fn async_main(opts: Arc<Opts>) -> ah::Result<()> {
         .context("Send report e-mail")?;
 
     // Notify systemd that we are ready.
-    systemd_notify_ready().context("Notify systemd ready")?;
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    if !opts.no_systemd {
+        systemd_notify_ready().context("Notify systemd ready")?;
+    }
 
     Ok(())
 }
