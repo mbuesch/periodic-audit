@@ -7,6 +7,8 @@ use anyhow::{self as ah, Context as _};
 use lettre::{
     AsyncSmtpTransport, AsyncTransport as _, Message, Tokio1Executor, message::header::ContentType,
 };
+use std::sync::Arc;
+use tokio::{sync::Semaphore, task::JoinSet};
 
 pub async fn send_report(config: &Config, report: &Report) -> ah::Result<()> {
     if config.mail.disabled() {
@@ -47,13 +49,23 @@ pub async fn send_report(config: &Config, report: &Report) -> ah::Result<()> {
     }
 
     let transport = if let Some(relay) = &config.mail.relay {
-        AsyncSmtpTransport::<Tokio1Executor>::from_url(relay)?.build()
+        Arc::new(AsyncSmtpTransport::<Tokio1Executor>::from_url(relay)?.build())
     } else {
-        AsyncSmtpTransport::<Tokio1Executor>::unencrypted_localhost()
+        Arc::new(AsyncSmtpTransport::<Tokio1Executor>::unencrypted_localhost())
     };
 
+    let sema = Arc::new(Semaphore::new(config.mail.max_concurrency()));
+    let mut set = JoinSet::new();
     for message in messages {
-        transport.send(message).await.context("Send e-mail")?;
+        let transport = Arc::clone(&transport);
+        let sema = Arc::clone(&sema);
+        set.spawn(async move {
+            let _permit = sema.acquire_owned().await;
+            transport.send(message).await.context("Send e-mail")
+        });
+    }
+    while let Some(res) = set.join_next().await {
+        res.context("Join task")??;
     }
 
     Ok(())

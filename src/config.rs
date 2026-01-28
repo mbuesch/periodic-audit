@@ -24,11 +24,16 @@ pub struct ConfigMail {
     pub subject: String,
     pub from: String,
     pub to: Vec<String>,
+    pub max_concurrency: Option<usize>,
 }
 
 impl ConfigMail {
     pub fn disabled(&self) -> bool {
         self.disabled.unwrap_or(false)
+    }
+
+    pub fn max_concurrency(&self) -> usize {
+        self.max_concurrency.unwrap_or(1)
     }
 }
 
