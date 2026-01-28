@@ -1,6 +1,7 @@
 # Periodic cargo-audit with email reports
 
-A tool to periodically audit Rust binaries for vulnerabilities using `cargo-audit`.
+A tool to periodically audit Rust binaries for vulnerabilities using
+[cargo-audit](https://crates.io/crates/cargo-audit).
 
 The report is sent via email to the configured recipients.
 
