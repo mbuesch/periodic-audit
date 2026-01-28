@@ -50,7 +50,6 @@ async fn async_main(opts: Arc<Opts>) -> ah::Result<()> {
     let report = loop {
         let report = match audit_binaries(&conf, &conf.watch.paths).await {
             Ok(report) => {
-                println!("{report}");
                 if !report.failed() {
                     break report;
                 }
@@ -61,12 +60,17 @@ async fn async_main(opts: Arc<Opts>) -> ah::Result<()> {
                 report
             }
         };
+
         tries += 1;
         if tries >= conf.cargo_audit.tries().min(30) {
-            break report;
+            break report; // Give up.
         }
+
         eprintln!("One or more audits failed. Retrying...");
-        sleep(Duration::from_secs((1 << (tries - 1)).min(60))).await;
+
+        let mut dur = (1_u64 << (tries - 1)) * 2;
+        dur = dur.min(120);
+        sleep(Duration::from_secs(dur)).await;
     };
 
     // Send the report e-mail.
