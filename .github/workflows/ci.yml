@@ -48,7 +48,10 @@ jobs:
         run: rustup component add clippy
 
       # Build
-      - run: cargo build
+      - if: matrix.os.name != 'windows'
+        run: cargo build
+      - if: matrix.os.name == 'windows'
+        run: cargo build --release
 
       # Linting
       - if: matrix.os.name == 'linux' && matrix.toolchain.name == 'latest'
