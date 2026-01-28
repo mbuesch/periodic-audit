@@ -17,6 +17,7 @@ pub struct Report {
     entries: Vec<ReportEntry>,
     messages: Vec<String>,
     failed: bool,
+    vulnerable: bool,
 }
 
 impl Report {
@@ -25,10 +26,12 @@ impl Report {
             entries: vec![],
             messages: vec![],
             failed: false,
+            vulnerable: false,
         }
     }
 
     pub fn add(&mut self, entry: ReportEntry) {
+        self.vulnerable |= entry.vulnerable;
         self.entries.push(entry);
     }
 
@@ -56,7 +59,7 @@ impl Report {
     }
 
     pub fn vulnerable(&self) -> bool {
-        self.entries.iter().any(|entry| entry.vulnerable)
+        self.vulnerable
     }
 }
 
