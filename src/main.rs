@@ -2,13 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 // Copyright (C) 2026 Michael Büsch <m@bues.ch>
 
-use crate::{
-    audit::audit_binaries, config::Config, mail::send_report, systemd::systemd_notify_ready,
-};
+use crate::{audit::audit_binaries, config::Config, mail::send_report};
 use anyhow::{self as ah, Context as _};
 use clap::Parser;
 use std::{path::PathBuf, sync::Arc, time::Duration};
 use tokio::{runtime, time::sleep};
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+use crate::systemd::systemd_notify_ready;
 
 mod audit;
 mod config;
