@@ -40,6 +40,7 @@ pub async fn send_report(config: &Config, report: &Report) -> ah::Result<()> {
             )
             .to(to.parse().context("Parse mail.to address")?)
             .subject(&subject)
+            .user_agent("periodic-audit".to_string())
             .header(ContentType::TEXT_PLAIN)
             .body(report_string.clone())?;
         messages.push(message);
