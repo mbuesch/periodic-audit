@@ -4,9 +4,9 @@
 
 use crate::{config::Config, report::Report};
 use anyhow::{self as ah, Context as _};
-use lettre::{Message, SmtpTransport, Transport as _};
+use lettre::{AsyncSmtpTransport, AsyncTransport as _, Message, Tokio1Executor};
 
-pub fn send_report(config: &Config, report: &Report) -> ah::Result<()> {
+pub async fn send_report(config: &Config, report: &Report) -> ah::Result<()> {
     if config.mail.disabled() {
         println!("Mail sending is disabled; not sending report e-mail.");
         return Ok(());
@@ -43,13 +43,13 @@ pub fn send_report(config: &Config, report: &Report) -> ah::Result<()> {
     }
 
     let transport = if let Some(relay) = &config.mail.relay {
-        SmtpTransport::relay(relay)?.build()
+        AsyncSmtpTransport::<Tokio1Executor>::from_url(relay)?.build()
     } else {
-        SmtpTransport::unencrypted_localhost()
+        AsyncSmtpTransport::<Tokio1Executor>::unencrypted_localhost()
     };
 
     for message in messages {
-        transport.send(&message).context("Send e-mail")?;
+        transport.send(message).await.context("Send e-mail")?;
     }
 
     Ok(())

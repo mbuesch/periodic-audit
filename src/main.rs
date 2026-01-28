@@ -70,7 +70,9 @@ async fn async_main(opts: Arc<Opts>) -> ah::Result<()> {
     };
 
     // Send the report e-mail.
-    send_report(&conf, &report).context("Send report e-mail")?;
+    send_report(&conf, &report)
+        .await
+        .context("Send report e-mail")?;
 
     // Notify systemd that we are ready.
     systemd_notify_ready().context("Notify systemd ready")?;
