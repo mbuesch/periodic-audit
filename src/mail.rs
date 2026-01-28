@@ -4,7 +4,9 @@
 
 use crate::{config::Config, report::Report};
 use anyhow::{self as ah, Context as _};
-use lettre::{AsyncSmtpTransport, AsyncTransport as _, Message, Tokio1Executor};
+use lettre::{
+    AsyncSmtpTransport, AsyncTransport as _, Message, Tokio1Executor, message::header::ContentType,
+};
 
 pub async fn send_report(config: &Config, report: &Report) -> ah::Result<()> {
     if config.mail.disabled() {
@@ -38,6 +40,7 @@ pub async fn send_report(config: &Config, report: &Report) -> ah::Result<()> {
             )
             .to(to.parse().context("Parse mail.to address")?)
             .subject(&subject)
+            .header(ContentType::TEXT_PLAIN)
             .body(report_string.clone())?;
         messages.push(message);
     }
