@@ -21,8 +21,8 @@ jobs:
         os:
           - name: linux
             version: ubuntu-latest
-          #- name: windows
-          #  version: windows-latest
+          - name: windows
+            version: windows-latest
           - name: macos
             version: macos-latest
     runs-on: ${{ matrix.os.version }}
