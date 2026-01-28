@@ -173,9 +173,15 @@ pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Re
                 report.add_message("cargo-audit exited due to signal".to_string());
             }
         }
-        for (i, json_part) in split_json_parts(&stdout).into_iter().enumerate() {
-            let path = bins[i].clone();
-
+        let parts = split_json_parts(&stdout);
+        if parts.len() != bins.len() {
+            return Err(report.fail(format!(
+                "cargo-audit returned {} JSON object(s) but {} binary(ies) were audited",
+                parts.len(),
+                bins.len()
+            )));
+        }
+        for (path, json_part) in bins.iter().cloned().zip(parts.into_iter()) {
             let audit_result: json::Value = json::from_str(json_part.trim())
                 .map_err(|e| report.fail(format!("Parse cargo-audit JSON output: {}", e)))?;
 
