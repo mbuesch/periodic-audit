@@ -44,6 +44,14 @@ If you don't have `cargo-audit` installed, you can install to `/opt/periodic-aud
 
 Check and modify the path in the configuration file if you install `cargo-audit` to another custom location.
 
+# Making your binaries auditable
+
+It is **highly recommended** to build all your Rust binaries that you want to audit with the
+[cargo-auditable](https://crates.io/crates/cargo-auditable)
+tool.
+
+This tool adds the necessary metadata to your binaries to allow `cargo-audit` to analyze them properly.
+
 # License
 
 Copyright (c) 2026 Michael Büsch <m@bues.ch>
