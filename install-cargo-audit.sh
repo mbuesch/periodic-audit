@@ -1,2 +1,4 @@
 #!/bin/sh
-exec cargo install --force --root /opt/periodic-audit/ cargo-audit
+set -e
+cargo install --force --root /opt/periodic-audit/ cargo-audit
+cargo install --force --root /opt/periodic-audit/ cargo-auditable
