@@ -73,10 +73,7 @@ fn split_json_parts(input: &str) -> ah::Result<Vec<String>> {
         return Err(err!("Unterminated string in JSON data."));
     }
     if indent != 0 {
-        return Err(err!(
-            "Mismatched braces in JSON data (indent = {}).",
-            indent
-        ));
+        return Err(err!("Mismatched braces in JSON data (indent = {indent})."));
     }
     if !part.trim().is_empty() {
         return Err(err!("Trailing garbage at end of JSON data."));

@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 // Copyright (C) 2026 Michael Büsch <m@bues.ch>
 
+#![forbid(unsafe_code)]
+
 use crate::{audit::audit_binaries, config::Config, mail::send_report};
 use anyhow::{self as ah, Context as _};
 use clap::Parser;
