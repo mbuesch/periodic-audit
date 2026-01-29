@@ -10,6 +10,8 @@ The report is sent via email to the configured recipients.
 A systemd service and timer unit is provided to run the audit periodically.
 It is recommended to use systemd, but you can also run the tool via cron or any other scheduler.
 
+The systemd service and timer units will be installed by the `install.sh` script (see below).
+
 # Building
 
 To build the project, ensure you have Rust and Cargo installed.
@@ -29,21 +31,26 @@ First create the unprivileged user and group that will run the service:
 ./create-user.sh
 ```
 
+Creating the user and group only has to be done once.
+The script will delete any existing user and group with the same name before creating them anew and therefore can result in different UIDs and GIDs on multiple runs.
+
 To install the `periodic-audit` binary and the systemd service, run:
 
 ```bash
 ./install.sh
 ```
 
-## Install cargo-audit
+## Install cargo-audit and cargo-auditable
 
-If you don't have `cargo-audit` installed, you can install to `/opt/periodic-audit/bin` by running:
+If you don't have `cargo-audit` or `cargo-auditable` installed, you can install them to `/opt/periodic-audit/bin` by running:
 
 ```bash
 ./install-cargo-audit.sh
 ```
 
-Check and modify the path in the configuration file if you install `cargo-audit` to another custom location.
+Check and modify the path in the `periodic-audit.conf` configuration file if you install `cargo-audit` to another custom location.
+
+After installation make sure `/opt/periodic-audit/bin` is in your `$PATH`.
 
 # Making your binaries auditable
 
