@@ -12,7 +12,6 @@ repository = "https://github.com/mbuesch/periodic-audit"
 readme = "README.md"
 categories = [ "security", "command-line-utilities" ]
 keywords = [ "cargo-audit", "security", "email", "report" ]
-publish = false
 
 [dependencies]
 anyhow = "1"
