@@ -15,6 +15,10 @@ pub async fn send_report(config: &Config, report: &Report) -> ah::Result<()> {
         println!("Mail sending is disabled; not sending report e-mail.");
         return Ok(());
     }
+    if config.mail.to.is_empty() {
+        println!("No mail.to addresses configured; not sending report e-mail.");
+        return Ok(());
+    }
 
     let subject = format!(
         "{}{}",
