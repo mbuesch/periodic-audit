@@ -5,7 +5,8 @@
 use crate::{config::Config, report::Report};
 use anyhow::{self as ah, Context as _};
 use lettre::{
-    AsyncSmtpTransport, AsyncTransport as _, Message, Tokio1Executor, message::header::ContentType,
+    AsyncSmtpTransport, AsyncTransport as _, Message, Tokio1Executor,
+    message::{Mailbox, header::ContentType},
 };
 use std::sync::Arc;
 use tokio::{sync::Semaphore, task::JoinSet};
@@ -31,19 +32,18 @@ pub async fn send_report(config: &Config, report: &Report) -> ah::Result<()> {
         },
         config.mail.subject,
     );
+    let from: Mailbox = config
+        .mail
+        .from
+        .parse()
+        .context("Parse mail.from address")?;
     let report_string = format!("{report}");
 
     let mut messages = Vec::with_capacity(config.mail.to.len());
 
     for to in &config.mail.to {
         let message = Message::builder()
-            .from(
-                config
-                    .mail
-                    .from
-                    .parse()
-                    .context("Parse mail.from address")?,
-            )
+            .from(from.clone())
             .to(to.parse().context("Parse mail.to address")?)
             .subject(&subject)
             .user_agent("periodic-audit".to_string())
