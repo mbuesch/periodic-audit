@@ -23,6 +23,18 @@ Then run:
 
 # Installation
 
+## Install cargo-audit and cargo-auditable
+
+If you don't have `cargo-audit` or `cargo-auditable` installed, you can install them to `/opt/periodic-audit/bin` by running:
+
+```bash
+./install-cargo-audit.sh
+```
+
+Check and modify the path in the `periodic-audit.conf` configuration file if you install `cargo-audit` to another custom location.
+
+After installation make sure `/opt/periodic-audit/bin` is in your `$PATH`.
+
 ## Install periodic-audit
 
 First create the unprivileged user and group that will run the service:
@@ -39,18 +51,6 @@ To install the `periodic-audit` binary and the systemd service, run:
 ```bash
 ./install.sh
 ```
-
-## Install cargo-audit and cargo-auditable
-
-If you don't have `cargo-audit` or `cargo-auditable` installed, you can install them to `/opt/periodic-audit/bin` by running:
-
-```bash
-./install-cargo-audit.sh
-```
-
-Check and modify the path in the `periodic-audit.conf` configuration file if you install `cargo-audit` to another custom location.
-
-After installation make sure `/opt/periodic-audit/bin` is in your `$PATH`.
 
 # Making your binaries auditable
 
