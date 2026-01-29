@@ -226,4 +226,73 @@ pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Re
     Ok(report)
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn split_single_object() {
+        let input = r#"  {"a":1}  "#;
+        let parts = split_json_parts(input).expect("should split single object");
+        assert_eq!(parts.len(), 1);
+        assert_eq!(parts[0], r#"{"a":1}"#);
+    }
+
+    #[test]
+    fn split_multiple_objects() {
+        let input = r#"{"a":1}
+
+{"b":2}"#;
+        let parts = split_json_parts(input).expect("should split two objects");
+        assert_eq!(parts.len(), 2);
+        assert_eq!(parts[0], r#"{"a":1}"#);
+        assert_eq!(parts[1], r#"{"b":2}"#);
+    }
+
+    #[test]
+    fn braces_inside_string_dont_affect_split() {
+        let input = r#"{"s":"}{"}{}"#;
+        let parts = split_json_parts(input).expect("should split into two objects");
+        assert_eq!(parts.len(), 2);
+        assert_eq!(parts[0], r#"{"s":"}{"}"#);
+        assert_eq!(parts[1], r#"{}"#);
+    }
+
+    #[test]
+    fn unterminated_string_error() {
+        let input = r#"{"a":"b}"#;
+        let err = split_json_parts(input).unwrap_err();
+        assert!(err.to_string().contains("Unterminated string"));
+    }
+
+    #[test]
+    fn trailing_backslash_error() {
+        let input = r#"{"a":"b\"#; // ends with a backslash inside an open string
+        let err = split_json_parts(input).unwrap_err();
+        assert!(err.to_string().contains("Trailing backslash"));
+    }
+
+    #[test]
+    fn mismatched_braces_error() {
+        let input = r#"{"#;
+        let err = split_json_parts(input).unwrap_err();
+        assert!(err.to_string().contains("Mismatched braces"));
+    }
+
+    #[test]
+    fn trailing_garbage_error() {
+        let input = r#"{} garbage"#;
+        let err = split_json_parts(input).unwrap_err();
+        assert!(err.to_string().contains("Trailing garbage"));
+    }
+
+    #[test]
+    fn nested_objects() {
+        let input = r#"  {"a":{"b":{"c":3},"arr":[{"x":1}]}}  "#;
+        let parts = split_json_parts(input).expect("should handle nested objects");
+        assert_eq!(parts.len(), 1);
+        assert_eq!(parts[0], r#"{"a":{"b":{"c":3},"arr":[{"x":1}]}}"#);
+    }
+}
+
 // vim: ts=4 sw=4 expandtab
