@@ -91,4 +91,86 @@ impl Config {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_minimal_config_and_defaults() {
+        let toml = r#"
+[watch]
+paths = ["/foo"]
+
+[mail]
+subject = "subj"
+from = "from@example.com"
+to = ["to@example.com"]
+
+[cargo_audit]
+exe = "/usr/bin/cargo-audit"
+        "#;
+        let conf: Config = toml::from_str(toml).unwrap();
+        assert_eq!(conf.watch.paths.len(), 1);
+        assert_eq!(conf.watch.paths[0], Path::new("/foo"));
+        assert_eq!(conf.mail.subject, "subj");
+        assert_eq!(conf.mail.from, "from@example.com");
+        assert_eq!(conf.mail.to, vec!["to@example.com".to_string()]);
+        assert!(!conf.mail.disabled());
+        assert_eq!(conf.mail.max_concurrency(), 1);
+        assert_eq!(conf.cargo_audit.exe, Path::new("/usr/bin/cargo-audit"));
+        assert!(!conf.cargo_audit.debug());
+        assert_eq!(conf.cargo_audit.tries(), 5);
+    }
+
+    #[test]
+    fn parse_full_config_and_non_default() {
+        let toml = r#"
+[watch]
+paths = ["/foo", "/bar/biz"]
+
+[mail]
+disabled = true
+relay = "smtp://smtp.example.com:587"
+subject = "full subj"
+from = "noreply@example.com"
+to = ["one@example.com", "two@example.com"]
+max_concurrency = 4
+
+[cargo_audit]
+exe = "/usr/local/bin/cargo-audit"
+debug = true
+tries = 10
+db = "/var/lib/cargo-audit/db"
+        "#;
+        let conf: Config = toml::from_str(toml).unwrap();
+        assert_eq!(conf.watch.paths.len(), 2);
+        assert_eq!(conf.watch.paths[0], Path::new("/foo"));
+        assert_eq!(conf.watch.paths[1], Path::new("/bar/biz"));
+
+        assert_eq!(conf.mail.subject, "full subj");
+        assert_eq!(conf.mail.from, "noreply@example.com");
+        assert_eq!(
+            conf.mail.to,
+            vec!["one@example.com".to_string(), "two@example.com".to_string()]
+        );
+        assert!(conf.mail.disabled());
+        assert_eq!(conf.mail.max_concurrency(), 4);
+        assert_eq!(
+            conf.mail.relay.as_deref(),
+            Some("smtp://smtp.example.com:587")
+        );
+
+        assert_eq!(
+            conf.cargo_audit.exe,
+            Path::new("/usr/local/bin/cargo-audit")
+        );
+        assert!(conf.cargo_audit.debug());
+        assert_eq!(conf.cargo_audit.tries(), 10);
+        assert_eq!(
+            conf.cargo_audit.db.as_deref(),
+            Some(Path::new("/var/lib/cargo-audit/db"))
+        );
+    }
+}
+
 // vim: ts=4 sw=4 expandtab
