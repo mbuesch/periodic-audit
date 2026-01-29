@@ -6,7 +6,7 @@ use crate::{
     config::Config,
     report::{Report, ReportEntry},
 };
-use anyhow as ah;
+use anyhow::{self as ah, format_err as err};
 use serde_json as json;
 use std::{path::PathBuf, process::Stdio};
 use tokio::{fs::read_dir, process::Command};
@@ -14,10 +14,9 @@ use tokio::{fs::read_dir, process::Command};
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt as _;
 
-fn split_json_parts(input: &str) -> Vec<String> {
+fn split_json_parts(input: &str) -> ah::Result<Vec<String>> {
     let mut parts = Vec::with_capacity((input.len() / 64).max(1));
     let mut part = String::with_capacity(input.len());
-
     let mut indent = 0_i32;
     let mut in_string = false;
     let mut escape = false;
@@ -62,30 +61,28 @@ fn split_json_parts(input: &str) -> Vec<String> {
                     }
                 }
             }
-            '\n' => {
-                if in_string {
-                    part.push(c);
-                } else {
-                    let ptrim = part.trim();
-                    if !ptrim.is_empty() {
-                        parts.push(ptrim.to_string());
-                    }
-                    part.clear();
-                    indent = 0;
-                }
-            }
             _ => {
                 part.push(c);
             }
         }
     }
-
-    let ptrim = part.trim();
-    if !ptrim.is_empty() {
-        parts.push(ptrim.to_string());
+    if escape {
+        return Err(err!("Trailing backslash in JSON data."));
+    }
+    if in_string {
+        return Err(err!("Unterminated string in JSON data."));
+    }
+    if indent != 0 {
+        return Err(err!(
+            "Mismatched braces in JSON data (indent = {}).",
+            indent
+        ));
+    }
+    if !part.trim().is_empty() {
+        return Err(err!("Trailing garbage at end of JSON data."));
     }
 
-    parts
+    Ok(parts)
 }
 
 pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Report, Report> {
@@ -184,7 +181,8 @@ pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Re
                 report.add_message("cargo-audit exited due to signal".to_string());
             }
         }
-        let parts = split_json_parts(&stdout);
+        let parts = split_json_parts(&stdout)
+            .map_err(|e| report.fail(format!("Split cargo-audit JSON output: {}", e)))?;
         if parts.len() != bins.len() {
             return Err(report.fail(format!(
                 "cargo-audit returned {} JSON object(s) but {} binary(ies) were audited",
