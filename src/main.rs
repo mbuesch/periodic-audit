@@ -83,6 +83,23 @@ async fn async_main(opts: Arc<Opts>) -> ah::Result<()> {
         sleep(Duration::from_secs(dur)).await;
     };
 
+    // Print result to system log.
+    if report.failed() {
+        println!("Audit FAILED.");
+    } else if report.vulnerable() {
+        let failed_paths = report
+            .entries()
+            .iter()
+            .filter(|e| e.vulnerable)
+            .map(|e| e.path.display().to_string());
+        println!(
+            "VULNERABILITIES FOUND: {}",
+            itertools::join(failed_paths, ", ")
+        );
+    } else {
+        println!("No vulnerabilities found.");
+    }
+
     // Send the report e-mail.
     send_report(&conf, &report)
         .await
