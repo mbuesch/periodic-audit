@@ -14,8 +14,8 @@ use tokio::{fs::read_dir, process::Command};
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt as _;
 
-fn split_json_parts(input: &str) -> ah::Result<Vec<String>> {
-    let mut parts = Vec::with_capacity((input.len() / 64).max(1));
+fn split_json_parts(input: &str, expected_nr_parts: usize) -> ah::Result<Vec<String>> {
+    let mut parts = Vec::with_capacity(expected_nr_parts);
     let mut part = String::with_capacity(input.len());
     let mut indent = 0_i32;
     let mut in_string = false;
@@ -85,7 +85,7 @@ fn split_json_parts(input: &str) -> ah::Result<Vec<String>> {
 pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Report, Report> {
     let mut report = Report::new();
 
-    let mut bins = Vec::with_capacity(paths.len() * 2);
+    let mut bins = Vec::with_capacity(paths.len() * 8);
     for p in paths {
         match tokio::fs::metadata(p).await {
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
@@ -178,7 +178,7 @@ pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Re
                 report.add_message("cargo-audit exited due to signal".to_string());
             }
         }
-        let parts = split_json_parts(&stdout)
+        let parts = split_json_parts(&stdout, bins.len())
             .map_err(|e| report.fail(format!("Split cargo-audit JSON output: {}", e)))?;
         if parts.len() != bins.len() {
             return Err(report.fail(format!(
@@ -230,7 +230,7 @@ mod tests {
     #[test]
     fn split_single_object() {
         let input = r#"  {"a":1}  "#;
-        let parts = split_json_parts(input).expect("should split single object");
+        let parts = split_json_parts(input, 0).expect("should split single object");
         assert_eq!(parts.len(), 1);
         assert_eq!(parts[0], r#"{"a":1}"#);
     }
@@ -240,7 +240,7 @@ mod tests {
         let input = r#"{"a":1}
 
 {"b":2}"#;
-        let parts = split_json_parts(input).expect("should split two objects");
+        let parts = split_json_parts(input, 1).expect("should split two objects");
         assert_eq!(parts.len(), 2);
         assert_eq!(parts[0], r#"{"a":1}"#);
         assert_eq!(parts[1], r#"{"b":2}"#);
@@ -249,7 +249,7 @@ mod tests {
     #[test]
     fn braces_inside_string_dont_affect_split() {
         let input = r#"{"s":"}{"}{}"#;
-        let parts = split_json_parts(input).expect("should split into two objects");
+        let parts = split_json_parts(input, 10).expect("should split into two objects");
         assert_eq!(parts.len(), 2);
         assert_eq!(parts[0], r#"{"s":"}{"}"#);
         assert_eq!(parts[1], r#"{}"#);
@@ -258,35 +258,35 @@ mod tests {
     #[test]
     fn unterminated_string_error() {
         let input = r#"{"a":"b}"#;
-        let err = split_json_parts(input).unwrap_err();
+        let err = split_json_parts(input, 1).unwrap_err();
         assert!(err.to_string().contains("Unterminated string"));
     }
 
     #[test]
     fn trailing_backslash_error() {
-        let input = r#"{"a":"b\"#; // ends with a backslash inside an open string
-        let err = split_json_parts(input).unwrap_err();
+        let input = r#"{"a":"b\"#;
+        let err = split_json_parts(input, 1).unwrap_err();
         assert!(err.to_string().contains("Trailing backslash"));
     }
 
     #[test]
     fn mismatched_braces_error() {
         let input = r#"{"#;
-        let err = split_json_parts(input).unwrap_err();
+        let err = split_json_parts(input, 1).unwrap_err();
         assert!(err.to_string().contains("Mismatched braces"));
     }
 
     #[test]
     fn trailing_garbage_error() {
         let input = r#"{} garbage"#;
-        let err = split_json_parts(input).unwrap_err();
+        let err = split_json_parts(input, 1).unwrap_err();
         assert!(err.to_string().contains("Trailing garbage"));
     }
 
     #[test]
     fn nested_objects() {
         let input = r#"  {"a":{"b":{"c":3},"arr":[{"x":1}]}}  "#;
-        let parts = split_json_parts(input).expect("should handle nested objects");
+        let parts = split_json_parts(input, 1).expect("should handle nested objects");
         assert_eq!(parts.len(), 1);
         assert_eq!(parts[0], r#"{"a":{"b":{"c":3},"arr":[{"x":1}]}}"#);
     }

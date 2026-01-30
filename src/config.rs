@@ -161,7 +161,7 @@ exe = "/usr/bin/cargo-audit"
         assert_eq!(conf.watch.paths[0], Path::new("/foo"));
         assert_eq!(conf.mail.subject, "subj");
         assert_eq!(conf.mail.from, "from@example.com");
-        assert_eq!(conf.mail.to, vec!["to@example.com".to_string()]);
+        assert_eq!(conf.mail.to, ["to@example.com".to_string()]);
         assert!(!conf.mail.disabled());
         assert_eq!(conf.mail.max_concurrency(), 1);
         assert_eq!(conf.cargo_audit.exe, Path::new("/usr/bin/cargo-audit"));
@@ -198,7 +198,7 @@ db = "/var/lib/cargo-audit/db"
         assert_eq!(conf.mail.from, "noreply@example.com");
         assert_eq!(
             conf.mail.to,
-            vec!["one@example.com".to_string(), "two@example.com".to_string()]
+            ["one@example.com".to_string(), "two@example.com".to_string()]
         );
         assert!(conf.mail.disabled());
         assert_eq!(conf.mail.max_concurrency(), 4);

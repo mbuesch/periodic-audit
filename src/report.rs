@@ -23,8 +23,8 @@ pub struct Report {
 impl Report {
     pub fn new() -> Self {
         Self {
-            entries: vec![],
-            messages: vec![],
+            entries: Vec::with_capacity(32),
+            messages: Vec::with_capacity(8),
             failed: false,
             vulnerable: false,
         }
