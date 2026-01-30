@@ -4,7 +4,10 @@
 
 use anyhow::{self as ah};
 use serde::{Deserialize, Serialize};
-use std::path::{Path, PathBuf};
+use std::{
+    num::NonZeroUsize,
+    path::{Path, PathBuf},
+};
 use tokio::fs;
 
 #[cfg(not(target_os = "windows"))]
@@ -24,7 +27,7 @@ pub struct ConfigMail {
     pub subject: String,
     pub from: String,
     pub to: Vec<String>,
-    pub max_concurrency: Option<usize>,
+    pub max_concurrency: Option<NonZeroUsize>,
 }
 
 impl ConfigMail {
@@ -33,7 +36,7 @@ impl ConfigMail {
     }
 
     pub fn max_concurrency(&self) -> usize {
-        self.max_concurrency.unwrap_or(1)
+        self.max_concurrency.unwrap_or(1.try_into().unwrap()).into()
     }
 }
 
