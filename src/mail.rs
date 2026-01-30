@@ -12,11 +12,11 @@ use std::sync::Arc;
 use tokio::{sync::Semaphore, task::JoinSet};
 
 pub async fn send_report(config: &Config, report: &Report) -> ah::Result<()> {
-    if config.mail.disabled() {
+    if config.mail().disabled() {
         println!("Mail sending is disabled; not sending report e-mail.");
         return Ok(());
     }
-    if config.mail.to.is_empty() {
+    if config.mail().to().is_empty() {
         println!("No mail.to addresses configured; not sending report e-mail.");
         return Ok(());
     }
@@ -30,18 +30,18 @@ pub async fn send_report(config: &Config, report: &Report) -> ah::Result<()> {
         } else {
             ""
         },
-        config.mail.subject,
+        config.mail().subject(),
     );
     let from: Mailbox = config
-        .mail
-        .from
+        .mail()
+        .from()
         .parse()
         .context("Parse mail.from address")?;
     let report_string = format!("{report}");
 
-    let mut messages = Vec::with_capacity(config.mail.to.len());
+    let mut messages = Vec::with_capacity(config.mail().to().len());
 
-    for to in &config.mail.to {
+    for to in config.mail().to() {
         let message = Message::builder()
             .from(from.clone())
             .to(to.parse().context("Parse mail.to address")?)
@@ -52,13 +52,13 @@ pub async fn send_report(config: &Config, report: &Report) -> ah::Result<()> {
         messages.push(message);
     }
 
-    let transport = if let Some(relay) = &config.mail.relay {
+    let transport = if let Some(relay) = &config.mail().relay() {
         Arc::new(AsyncSmtpTransport::<Tokio1Executor>::from_url(relay)?.build())
     } else {
         Arc::new(AsyncSmtpTransport::<Tokio1Executor>::unencrypted_localhost())
     };
 
-    let sema = Arc::new(Semaphore::new(config.mail.max_concurrency()));
+    let sema = Arc::new(Semaphore::new(config.mail().max_concurrency()));
     let mut set = JoinSet::new();
     for message in messages {
         let transport = Arc::clone(&transport);

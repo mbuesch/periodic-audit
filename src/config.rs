@@ -17,22 +17,44 @@ const CONF_PATH: &str = "periodic-audit.conf";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConfigWatch {
-    pub paths: Vec<PathBuf>,
+    paths: Vec<PathBuf>,
+}
+
+impl ConfigWatch {
+    pub fn paths(&self) -> &[PathBuf] {
+        &self.paths
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConfigMail {
-    pub disabled: Option<bool>,
-    pub relay: Option<String>,
-    pub subject: String,
-    pub from: String,
-    pub to: Vec<String>,
-    pub max_concurrency: Option<NonZeroUsize>,
+    disabled: Option<bool>,
+    relay: Option<String>,
+    subject: String,
+    from: String,
+    to: Vec<String>,
+    max_concurrency: Option<NonZeroUsize>,
 }
 
 impl ConfigMail {
     pub fn disabled(&self) -> bool {
         self.disabled.unwrap_or(false)
+    }
+
+    pub fn relay(&self) -> Option<&str> {
+        self.relay.as_deref()
+    }
+
+    pub fn subject(&self) -> &str {
+        &self.subject
+    }
+
+    pub fn from(&self) -> &str {
+        &self.from
+    }
+
+    pub fn to(&self) -> &[String] {
+        &self.to
     }
 
     pub fn max_concurrency(&self) -> usize {
@@ -42,27 +64,49 @@ impl ConfigMail {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConfigCargoAudit {
-    pub exe: PathBuf,
-    pub debug: Option<bool>,
-    pub tries: Option<u32>,
-    pub db: Option<PathBuf>,
+    exe: PathBuf,
+    debug: Option<bool>,
+    tries: Option<NonZeroUsize>,
+    db: Option<PathBuf>,
 }
 
 impl ConfigCargoAudit {
+    pub fn exe(&self) -> &Path {
+        &self.exe
+    }
+
     pub fn debug(&self) -> bool {
         self.debug.unwrap_or(false)
     }
 
-    pub fn tries(&self) -> u32 {
-        self.tries.unwrap_or(5)
+    pub fn tries(&self) -> usize {
+        self.tries.unwrap_or(5.try_into().unwrap()).into()
+    }
+
+    pub fn db(&self) -> Option<&Path> {
+        self.db.as_deref()
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
-    pub watch: ConfigWatch,
-    pub mail: ConfigMail,
-    pub cargo_audit: ConfigCargoAudit,
+    watch: ConfigWatch,
+    mail: ConfigMail,
+    cargo_audit: ConfigCargoAudit,
+}
+
+impl Config {
+    pub fn watch(&self) -> &ConfigWatch {
+        &self.watch
+    }
+
+    pub fn mail(&self) -> &ConfigMail {
+        &self.mail
+    }
+
+    pub fn cargo_audit(&self) -> &ConfigCargoAudit {
+        &self.cargo_audit
+    }
 }
 
 impl Config {

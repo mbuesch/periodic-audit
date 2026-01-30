@@ -56,9 +56,9 @@ async fn async_main(opts: Arc<Opts>) -> ah::Result<()> {
     ))?;
 
     // Run cargo-audit on the specified paths, retrying on failure.
-    let mut tries = 0_u32;
+    let mut tries = 0;
     let report = loop {
-        let report = match audit_binaries(&conf, &conf.watch.paths).await {
+        let report = match audit_binaries(&conf, conf.watch().paths()).await {
             Ok(report) => {
                 if !report.failed() {
                     break report;
@@ -72,7 +72,7 @@ async fn async_main(opts: Arc<Opts>) -> ah::Result<()> {
         };
 
         tries += 1;
-        if tries >= conf.cargo_audit.tries().min(30) {
+        if tries >= conf.cargo_audit().tries().min(30) {
             break report; // Give up.
         }
 

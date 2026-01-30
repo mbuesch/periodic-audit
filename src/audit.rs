@@ -144,12 +144,12 @@ pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Re
         report.add_message("WARNING: No existing paths to audit; cargo-audit skipped.".to_string());
     } else {
         // Execute cargo-audit
-        let mut cmd = Command::new(&config.cargo_audit.exe);
+        let mut cmd = Command::new(config.cargo_audit().exe());
         let mut cmd = cmd
             .arg("audit")
             .args(["--deny", "warnings"])
             .args(["--format", "json"]);
-        if let Some(db_path) = &config.cargo_audit.db {
+        if let Some(db_path) = &config.cargo_audit().db() {
             cmd = cmd.arg("--db").arg(db_path)
         }
         cmd = cmd
@@ -163,7 +163,7 @@ pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Re
         let out = cmd.output().await.map_err(|e| {
             report.fail(format!(
                 "Error executing cargo-audit ({}): {}",
-                config.cargo_audit.exe.display(),
+                config.cargo_audit().exe().display(),
                 e
             ))
         })?;
@@ -171,7 +171,7 @@ pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Re
         // Parse cargo-audit output
         let stdout = String::from_utf8(out.stdout)
             .map_err(|e| report.fail(format!("Parse cargo-audit stdout as UTF-8: {}", e)))?;
-        if config.cargo_audit.debug() {
+        if config.cargo_audit().debug() {
             if let Some(code) = out.status.code() {
                 report.add_message(format!("cargo-audit exited with code {}", code));
             } else {
@@ -194,7 +194,7 @@ pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Re
             let json_pretty = json::to_string_pretty(&audit_result)
                 .map_err(|e| report.fail(format!("Format cargo-audit JSON output: {}", e)))?;
 
-            if config.cargo_audit.debug() {
+            if config.cargo_audit().debug() {
                 println!("\n\naudit result for {}:", path.display());
                 println!("{json_pretty}");
             }
