@@ -4,7 +4,7 @@
 
 #![forbid(unsafe_code)]
 
-use crate::{audit::audit_binaries, config::Config, report::mail::send_report};
+use crate::{audit::audit_binaries, config::Config};
 use anyhow::{self as ah, Context as _};
 use clap::Parser;
 use std::{path::PathBuf, sync::Arc, time::Duration};
@@ -49,14 +49,14 @@ impl Opts {
 
 async fn async_main(opts: Arc<Opts>) -> ah::Result<()> {
     // Load the configuration file.
-    let conf = Config::load(&opts.get_config()).await.context(format!(
+    let conf = Arc::new(Config::load(&opts.get_config()).await.context(format!(
         "Load configuration file '{}'",
         opts.get_config().display()
-    ))?;
+    ))?);
 
     // Run cargo-audit on the specified paths, retrying on failure.
     let mut tries = 0;
-    let report = loop {
+    let report = Arc::new(loop {
         let report = match audit_binaries(&conf, conf.watch().paths()).await {
             Ok(report) => {
                 if !report.failed() {
@@ -80,7 +80,7 @@ async fn async_main(opts: Arc<Opts>) -> ah::Result<()> {
         let mut dur = (1_u64 << (tries - 1)) * 2;
         dur = dur.min(120);
         sleep(Duration::from_secs(dur)).await;
-    };
+    });
 
     // Print result to system log.
     if report.failed() {
@@ -99,10 +99,43 @@ async fn async_main(opts: Arc<Opts>) -> ah::Result<()> {
         println!("No vulnerabilities found.");
     }
 
-    // Send the report e-mail.
-    send_report(&conf, &report)
-        .await
-        .context("Send report e-mail")?;
+    // Spawn file reporter task.
+    let file_handle = tokio::spawn({
+        let conf = Arc::clone(&conf);
+        let report = Arc::clone(&report);
+        async move {
+            report::file::write_report(&conf, &report)
+                .await
+                .context("Write report file")
+        }
+    });
+
+    // Spawn command reporter task.
+    let cmd_handle = tokio::spawn({
+        let conf = Arc::clone(&conf);
+        let report = Arc::clone(&report);
+        async move {
+            report::command::run(&conf, &report)
+                .await
+                .context("Run report command")
+        }
+    });
+
+    // Spawn mail reporter task.
+    let mail_handle = tokio::spawn({
+        let conf = Arc::clone(&conf);
+        let report = Arc::clone(&report);
+        async move {
+            report::mail::send_report(&conf, &report)
+                .await
+                .context("Send report e-mail")
+        }
+    });
+
+    // Await reporter tasks.
+    file_handle.await.context("Join report-file task")??;
+    cmd_handle.await.context("Join report-command task")??;
+    mail_handle.await.context("Join report-mail task")??;
 
     // Notify systemd that we are ready.
     #[cfg(any(target_os = "linux", target_os = "android"))]

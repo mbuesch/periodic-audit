@@ -2,8 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 // Copyright (C) 2026 Michael Büsch <m@bues.ch>
 
+use chrono::{DateTime, Utc};
 use std::path::PathBuf;
 
+pub mod command;
+pub mod file;
 pub mod mail;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
@@ -16,6 +19,7 @@ pub struct ReportEntry {
 
 #[derive(Debug, Clone, Default)]
 pub struct Report {
+    stamp: DateTime<Utc>,
     entries: Vec<ReportEntry>,
     messages: Vec<String>,
     failed: bool,
@@ -25,6 +29,7 @@ pub struct Report {
 impl Report {
     pub fn new() -> Self {
         Self {
+            stamp: Utc::now(),
             entries: Vec::with_capacity(32),
             messages: Vec::with_capacity(8),
             failed: false,
@@ -67,11 +72,13 @@ impl Report {
 
 impl std::fmt::Display for Report {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let date = self.stamp.format("%+");
+
         // Summary
         if self.failed() {
-            writeln!(f, "Audit FAILED.")?;
+            writeln!(f, "[{date}] Audit FAILED.")?;
         } else {
-            writeln!(f, "Audit results:")?;
+            writeln!(f, "[{date}] Audit results:")?;
             for entry in self.entries() {
                 writeln!(
                     f,

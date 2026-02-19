@@ -13,7 +13,6 @@ use tokio::{sync::Semaphore, task::JoinSet};
 
 pub async fn send_report(config: &Config, report: &Report) -> ah::Result<()> {
     if config.mail().disabled() {
-        println!("Mail sending is disabled; not sending report e-mail.");
         return Ok(());
     }
     if config.mail().to().is_empty() {
