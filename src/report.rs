@@ -4,6 +4,8 @@
 
 use std::path::PathBuf;
 
+pub mod mail;
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub struct ReportEntry {
     pub path: PathBuf,

@@ -4,7 +4,7 @@
 
 #![forbid(unsafe_code)]
 
-use crate::{audit::audit_binaries, config::Config, mail::send_report};
+use crate::{audit::audit_binaries, config::Config, report::mail::send_report};
 use anyhow::{self as ah, Context as _};
 use clap::Parser;
 use std::{path::PathBuf, sync::Arc, time::Duration};
@@ -15,7 +15,6 @@ use crate::systemd::systemd_notify_ready;
 
 mod audit;
 mod config;
-mod mail;
 mod report;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
