@@ -89,10 +89,49 @@ impl ConfigCargoAudit {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConfigReportFile {
+    disabled: Option<bool>,
+    append: Option<bool>,
+    path: PathBuf,
+}
+
+impl ConfigReportFile {
+    pub fn disabled(&self) -> bool {
+        self.disabled.unwrap_or(false)
+    }
+
+    pub fn append(&self) -> bool {
+        self.append.unwrap_or(false)
+    }
+
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConfigReportCommand {
+    disabled: Option<bool>,
+    exe: PathBuf,
+}
+
+impl ConfigReportCommand {
+    pub fn disabled(&self) -> bool {
+        self.disabled.unwrap_or(false)
+    }
+
+    pub fn exe(&self) -> &Path {
+        &self.exe
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     watch: ConfigWatch,
     mail: ConfigMail,
     cargo_audit: ConfigCargoAudit,
+    report_file: Option<ConfigReportFile>,
+    report_command: Option<ConfigReportCommand>,
 }
 
 impl Config {
@@ -106,6 +145,14 @@ impl Config {
 
     pub fn cargo_audit(&self) -> &ConfigCargoAudit {
         &self.cargo_audit
+    }
+
+    pub fn report_file(&self) -> Option<&ConfigReportFile> {
+        self.report_file.as_ref()
+    }
+
+    pub fn report_command(&self) -> Option<&ConfigReportCommand> {
+        self.report_command.as_ref()
     }
 }
 
@@ -167,6 +214,8 @@ exe = "/usr/bin/cargo-audit"
         assert_eq!(conf.cargo_audit.exe, Path::new("/usr/bin/cargo-audit"));
         assert!(!conf.cargo_audit.debug());
         assert_eq!(conf.cargo_audit.tries(), 5);
+        assert!(conf.report_file().is_none());
+        assert!(conf.report_command().is_none());
     }
 
     #[test]
@@ -188,6 +237,15 @@ exe = "/usr/local/bin/cargo-audit"
 debug = true
 tries = 10
 db = "/var/lib/cargo-audit/db"
+
+[report_file]
+disabled = true
+append = true
+path = "/var/log/periodic-audit.log"
+
+[report_command]
+disabled = true
+exe = "/usr/local/bin/report-handler"
         "#;
         let conf: Config = toml::from_str(toml).unwrap();
         assert_eq!(conf.watch.paths.len(), 2);
@@ -217,6 +275,15 @@ db = "/var/lib/cargo-audit/db"
             conf.cargo_audit.db.as_deref(),
             Some(Path::new("/var/lib/cargo-audit/db"))
         );
+
+        let rf = conf.report_file.as_ref().unwrap();
+        assert!(rf.disabled());
+        assert!(rf.append());
+        assert_eq!(rf.path(), Path::new("/var/log/periodic-audit.log"));
+
+        let rc = conf.report_command.as_ref().unwrap();
+        assert!(rc.disabled());
+        assert_eq!(rc.exe(), Path::new("/usr/local/bin/report-handler"));
     }
 }
 
