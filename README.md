@@ -12,6 +12,26 @@ It is recommended to use systemd, but you can also run the tool via cron or any 
 
 The systemd service and timer units will be installed by the `install.sh` script (see below).
 
+# Reports
+
+The report is sent via email to the configured recipients.
+The email contains the audit report in the body and also embeds the full JSON report for further analysis.
+Email reports are optional and one of the other reporting methods can be used without email reports if desired.
+
+Alternatively or additionally, an arbitrary command can be executed for reporting.
+The report is passed to the command via stdin.
+
+Alternatively or additionally, the report can be written or appended to a file.
+
+# Configuration
+
+The default configuration file contains documentation and example configuration for all available options.
+The configuration file is located at
+`/opt/periodic-audit/etc/periodic-audit/periodic-audit.conf`
+or
+`/etc/periodic-audit/periodic-audit.conf`
+depending on your installation method.
+
 # Building
 
 To build the project, ensure you have Rust and Cargo installed.
