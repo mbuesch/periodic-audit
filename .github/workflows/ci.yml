@@ -3,6 +3,7 @@ name: Build and test
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 env: 
   CARGO_TERM_COLOR: always
@@ -15,9 +16,9 @@ jobs:
       matrix:
         toolchain:
           - name: msrv
-            version: 1.88.0
+            version: 1.88
           - name: latest
-            version: 1.93.0
+            version: 1.93
         os:
           - name: linux
             version: ubuntu-latest
