@@ -250,12 +250,12 @@ exe = "/usr/local/bin/report-handler"
         assert!(conf.cargo_audit.db.is_none());
 
         let rf = conf.report_file.as_ref().unwrap();
-        assert!(rf.disabled());
+        assert!(!rf.disabled());
         assert!(!rf.append());
         assert_eq!(rf.path(), Path::new("/var/log/periodic-audit.log"));
 
         let rc = conf.report_command.as_ref().unwrap();
-        assert!(rc.disabled());
+        assert!(!rc.disabled());
         assert_eq!(rc.exe(), Path::new("/usr/local/bin/report-handler"));
     }
 
