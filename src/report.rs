@@ -72,13 +72,14 @@ impl Report {
 
 impl std::fmt::Display for Report {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let date = self.stamp.format("%+");
+        let date = self.stamp.format("%Y-%m-%d %H:%M:%S %:z");
 
         // Summary
+        writeln!(f, "[{date}]")?;
         if self.failed() {
-            writeln!(f, "[{date}] Audit FAILED.")?;
+            writeln!(f, "Audit FAILED.")?;
         } else {
-            writeln!(f, "[{date}] Audit results:")?;
+            writeln!(f, "Audit results:")?;
             for entry in self.entries() {
                 writeln!(
                     f,
