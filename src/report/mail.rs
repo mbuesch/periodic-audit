@@ -12,11 +12,14 @@ use std::sync::Arc;
 use tokio::{sync::Semaphore, task::JoinSet};
 
 pub async fn send_report(config: &Config, report: &Report) -> ah::Result<()> {
-    if config.mail().disabled() {
+    let Some(rm) = config.report_mail() else {
+        return Ok(());
+    };
+    if rm.disabled() {
         return Ok(());
     }
-    if config.mail().to().is_empty() {
-        println!("No mail.to addresses configured; not sending report e-mail.");
+    if rm.to().is_empty() {
+        println!("No report_mail.to addresses configured; not sending report e-mail.");
         return Ok(());
     }
 
@@ -29,21 +32,20 @@ pub async fn send_report(config: &Config, report: &Report) -> ah::Result<()> {
         } else {
             ""
         },
-        config.mail().subject(),
+        rm.subject(),
     );
-    let from: Mailbox = config
-        .mail()
+    let from: Mailbox = rm
         .from()
         .parse()
-        .context("Parse mail.from address")?;
+        .context("Parse report_mail.from address")?;
     let report_string = format!("{report}");
 
-    let mut messages = Vec::with_capacity(config.mail().to().len());
+    let mut messages = Vec::with_capacity(rm.to().len());
 
-    for to in config.mail().to() {
+    for to in rm.to() {
         let message = Message::builder()
             .from(from.clone())
-            .to(to.parse().context("Parse mail.to address")?)
+            .to(to.parse().context("Parse report_mail.to address")?)
             .subject(&subject)
             .user_agent("periodic-audit".to_string())
             .header(ContentType::TEXT_PLAIN)
@@ -51,13 +53,13 @@ pub async fn send_report(config: &Config, report: &Report) -> ah::Result<()> {
         messages.push(message);
     }
 
-    let transport = if let Some(relay) = &config.mail().relay() {
+    let transport = if let Some(relay) = &rm.relay() {
         Arc::new(AsyncSmtpTransport::<Tokio1Executor>::from_url(relay)?.build())
     } else {
         Arc::new(AsyncSmtpTransport::<Tokio1Executor>::unencrypted_localhost())
     };
 
-    let sema = Arc::new(Semaphore::new(config.mail().max_concurrency()));
+    let sema = Arc::new(Semaphore::new(rm.max_concurrency()));
     let mut set = JoinSet::new();
     for message in messages {
         let transport = Arc::clone(&transport);

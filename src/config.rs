@@ -27,42 +27,6 @@ impl ConfigWatch {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ConfigMail {
-    disabled: Option<bool>,
-    relay: Option<String>,
-    subject: String,
-    from: String,
-    to: Vec<String>,
-    max_concurrency: Option<NonZeroUsize>,
-}
-
-impl ConfigMail {
-    pub fn disabled(&self) -> bool {
-        self.disabled.unwrap_or(false)
-    }
-
-    pub fn relay(&self) -> Option<&str> {
-        self.relay.as_deref()
-    }
-
-    pub fn subject(&self) -> &str {
-        &self.subject
-    }
-
-    pub fn from(&self) -> &str {
-        &self.from
-    }
-
-    pub fn to(&self) -> &[String] {
-        &self.to
-    }
-
-    pub fn max_concurrency(&self) -> usize {
-        self.max_concurrency.unwrap_or(1.try_into().unwrap()).into()
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConfigCargoAudit {
     exe: PathBuf,
     debug: Option<bool>,
@@ -85,6 +49,42 @@ impl ConfigCargoAudit {
 
     pub fn db(&self) -> Option<&Path> {
         self.db.as_deref()
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConfigReportMail {
+    disabled: Option<bool>,
+    relay: Option<String>,
+    subject: String,
+    from: String,
+    to: Vec<String>,
+    max_concurrency: Option<NonZeroUsize>,
+}
+
+impl ConfigReportMail {
+    pub fn disabled(&self) -> bool {
+        self.disabled.unwrap_or(false)
+    }
+
+    pub fn relay(&self) -> Option<&str> {
+        self.relay.as_deref()
+    }
+
+    pub fn subject(&self) -> &str {
+        &self.subject
+    }
+
+    pub fn from(&self) -> &str {
+        &self.from
+    }
+
+    pub fn to(&self) -> &[String] {
+        &self.to
+    }
+
+    pub fn max_concurrency(&self) -> usize {
+        self.max_concurrency.unwrap_or(1.try_into().unwrap()).into()
     }
 }
 
@@ -128,8 +128,9 @@ impl ConfigReportCommand {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     watch: ConfigWatch,
-    mail: ConfigMail,
     cargo_audit: ConfigCargoAudit,
+    #[serde(alias = "mail")] // backwards compatibility
+    report_mail: Option<ConfigReportMail>,
     report_file: Option<ConfigReportFile>,
     report_command: Option<ConfigReportCommand>,
 }
@@ -139,12 +140,12 @@ impl Config {
         &self.watch
     }
 
-    pub fn mail(&self) -> &ConfigMail {
-        &self.mail
-    }
-
     pub fn cargo_audit(&self) -> &ConfigCargoAudit {
         &self.cargo_audit
+    }
+
+    pub fn report_mail(&self) -> Option<&ConfigReportMail> {
+        self.report_mail.as_ref()
     }
 
     pub fn report_file(&self) -> Option<&ConfigReportFile> {
@@ -190,15 +191,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parse_minimal_config_and_defaults() {
+    fn parse_minimal_config() {
         let toml = r#"
 [watch]
 paths = ["/foo"]
-
-[mail]
-subject = "subj"
-from = "from@example.com"
-to = ["to@example.com"]
 
 [cargo_audit]
 exe = "/usr/bin/cargo-audit"
@@ -206,11 +202,6 @@ exe = "/usr/bin/cargo-audit"
         let conf: Config = toml::from_str(toml).unwrap();
         assert_eq!(conf.watch.paths.len(), 1);
         assert_eq!(conf.watch.paths[0], Path::new("/foo"));
-        assert_eq!(conf.mail.subject, "subj");
-        assert_eq!(conf.mail.from, "from@example.com");
-        assert_eq!(conf.mail.to, ["to@example.com".to_string()]);
-        assert!(!conf.mail.disabled());
-        assert_eq!(conf.mail.max_concurrency(), 1);
         assert_eq!(conf.cargo_audit.exe, Path::new("/usr/bin/cargo-audit"));
         assert!(!conf.cargo_audit.debug());
         assert_eq!(conf.cargo_audit.tries(), 5);
@@ -219,12 +210,62 @@ exe = "/usr/bin/cargo-audit"
     }
 
     #[test]
+    fn test_minimal_sections() {
+        let toml = r#"
+[watch]
+paths = ["/foo"]
+
+[report_mail]
+subject = "full subj"
+from = "noreply@example.com"
+to = ["one@example.com"]
+
+[cargo_audit]
+exe = "/usr/local/bin/cargo-audit"
+
+[report_file]
+path = "/var/log/periodic-audit.log"
+
+[report_command]
+exe = "/usr/local/bin/report-handler"
+        "#;
+        let conf: Config = toml::from_str(toml).unwrap();
+        assert_eq!(conf.watch.paths.len(), 1);
+        assert_eq!(conf.watch.paths[0], Path::new("/foo"));
+
+        let rm = conf.report_mail.as_ref().unwrap();
+        assert_eq!(rm.subject(), "full subj");
+        assert_eq!(rm.from(), "noreply@example.com");
+        assert_eq!(rm.to(), ["one@example.com".to_string()]);
+        assert!(!rm.disabled());
+        assert_eq!(rm.max_concurrency(), 1);
+        assert!(rm.relay().is_none());
+
+        assert_eq!(
+            conf.cargo_audit.exe,
+            Path::new("/usr/local/bin/cargo-audit")
+        );
+        assert!(!conf.cargo_audit.debug());
+        assert_eq!(conf.cargo_audit.tries(), 5);
+        assert!(conf.cargo_audit.db.is_none());
+
+        let rf = conf.report_file.as_ref().unwrap();
+        assert!(rf.disabled());
+        assert!(!rf.append());
+        assert_eq!(rf.path(), Path::new("/var/log/periodic-audit.log"));
+
+        let rc = conf.report_command.as_ref().unwrap();
+        assert!(rc.disabled());
+        assert_eq!(rc.exe(), Path::new("/usr/local/bin/report-handler"));
+    }
+
+    #[test]
     fn parse_full_config_and_non_default() {
         let toml = r#"
 [watch]
 paths = ["/foo", "/bar/biz"]
 
-[mail]
+[mail] # using the old section name to test the alias
 disabled = true
 relay = "smtp://smtp.example.com:587"
 subject = "full subj"
@@ -252,18 +293,16 @@ exe = "/usr/local/bin/report-handler"
         assert_eq!(conf.watch.paths[0], Path::new("/foo"));
         assert_eq!(conf.watch.paths[1], Path::new("/bar/biz"));
 
-        assert_eq!(conf.mail.subject, "full subj");
-        assert_eq!(conf.mail.from, "noreply@example.com");
+        let rm = conf.report_mail.as_ref().unwrap();
+        assert_eq!(rm.subject(), "full subj");
+        assert_eq!(rm.from(), "noreply@example.com");
         assert_eq!(
-            conf.mail.to,
+            rm.to(),
             ["one@example.com".to_string(), "two@example.com".to_string()]
         );
-        assert!(conf.mail.disabled());
-        assert_eq!(conf.mail.max_concurrency(), 4);
-        assert_eq!(
-            conf.mail.relay.as_deref(),
-            Some("smtp://smtp.example.com:587")
-        );
+        assert!(rm.disabled());
+        assert_eq!(rm.max_concurrency(), 4);
+        assert_eq!(rm.relay(), Some("smtp://smtp.example.com:587"));
 
         assert_eq!(
             conf.cargo_audit.exe,
