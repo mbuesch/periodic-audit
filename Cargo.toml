@@ -3,7 +3,7 @@
 [package]
 name = "periodic-audit"
 description = "A tool to run cargo-audit periodically and send email reports."
-version = "1.0.0"
+version = "1.1.0"
 edition = "2024"
 rust-version = "1.88"
 license = "MIT OR Apache-2.0"
