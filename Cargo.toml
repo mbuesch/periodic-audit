@@ -25,7 +25,7 @@ tokio = { version = "1", features = [ "rt", "fs", "process", "time", "sync", "ma
 toml = { version = "1.0", features = [ "serde" ] }
 
 [target.'cfg(any(target_os="linux", target_os="android"))'.dependencies]
-sd-notify = "0.4"
+sd-notify = "0.5"
 
 [workspace.lints.clippy]
 # Lints from `cargo` group
