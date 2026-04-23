@@ -29,13 +29,9 @@ fn split_json_parts(input: &str, expected_nr_parts: usize) -> ah::Result<Vec<Str
         }
 
         match c {
-            '\\' => {
-                if in_string {
-                    escape = true;
-                    part.push(c);
-                } else {
-                    part.push(c);
-                }
+            '\\' if in_string => {
+                escape = true;
+                part.push(c);
             }
             '"' => {
                 part.push(c);
@@ -187,7 +183,7 @@ pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Re
                 bins.len()
             )));
         }
-        for (path, json_part) in bins.iter().cloned().zip(parts.into_iter()) {
+        for (path, json_part) in bins.iter().cloned().zip(parts) {
             let audit_result: json::Value = json::from_str(json_part.trim())
                 .map_err(|e| report.fail(format!("Parse cargo-audit JSON output: {}", e)))?;
 
