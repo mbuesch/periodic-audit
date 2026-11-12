@@ -27,7 +27,7 @@ toml = { version = "1", features = [ "serde" ] }
 [target.'cfg(any(target_os="linux", target_os="android"))'.dependencies]
 sd-notify = "0.5"
 
-[workspace.lints.clippy]
+[lints.clippy]
 # Lints from `cargo` group
 cargo = "warn"
 multiple_crate_versions = { level = "allow", priority = 1 }
