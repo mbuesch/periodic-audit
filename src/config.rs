@@ -158,6 +158,7 @@ impl Config {
 }
 
 impl Config {
+    #[allow(clippy::single_match_else)]
     pub fn get_default_path() -> PathBuf {
         // The build-time environment variable PERIODICAUDIT_CONF_PREFIX can be
         // used to give an additional prefix.

@@ -78,6 +78,8 @@ fn split_json_parts(input: &str, expected_nr_parts: usize) -> ah::Result<Vec<Str
     Ok(parts)
 }
 
+#[allow(clippy::too_many_lines)]
+#[allow(clippy::redundant_closure_for_method_calls)]
 pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Report, Report> {
     let mut report = Report::new();
 
@@ -89,7 +91,6 @@ pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Re
                     "WARNING: '{}' does not exist; skipped.",
                     p.display()
                 ));
-                continue;
             }
             Err(e) => {
                 report.add_message(format!(
@@ -146,7 +147,7 @@ pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Re
             .args(["--deny", "warnings"])
             .args(["--format", "json"]);
         if let Some(db_path) = &config.cargo_audit().db() {
-            cmd = cmd.arg("--db").arg(db_path)
+            cmd = cmd.arg("--db").arg(db_path);
         }
         cmd = cmd
             .arg("bin")
@@ -166,16 +167,16 @@ pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Re
 
         // Parse cargo-audit output
         let stdout = String::from_utf8(out.stdout)
-            .map_err(|e| report.fail(format!("Parse cargo-audit stdout as UTF-8: {}", e)))?;
+            .map_err(|e| report.fail(format!("Parse cargo-audit stdout as UTF-8: {e}")))?;
         if config.cargo_audit().debug() {
             if let Some(code) = out.status.code() {
-                report.add_message(format!("cargo-audit exited with code {}", code));
+                report.add_message(format!("cargo-audit exited with code {code}"));
             } else {
                 report.add_message("cargo-audit exited due to signal".to_string());
             }
         }
         let parts = split_json_parts(&stdout, bins.len())
-            .map_err(|e| report.fail(format!("Split cargo-audit JSON output: {}", e)))?;
+            .map_err(|e| report.fail(format!("Split cargo-audit JSON output: {e}")))?;
         if parts.len() != bins.len() {
             return Err(report.fail(format!(
                 "cargo-audit returned {} JSON object(s) but {} binary(ies) were audited",
@@ -185,10 +186,10 @@ pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Re
         }
         for (path, json_part) in bins.iter().cloned().zip(parts) {
             let audit_result: json::Value = json::from_str(json_part.trim())
-                .map_err(|e| report.fail(format!("Parse cargo-audit JSON output: {}", e)))?;
+                .map_err(|e| report.fail(format!("Parse cargo-audit JSON output: {e}")))?;
 
             let json_pretty = json::to_string_pretty(&audit_result)
-                .map_err(|e| report.fail(format!("Format cargo-audit JSON output: {}", e)))?;
+                .map_err(|e| report.fail(format!("Format cargo-audit JSON output: {e}")))?;
 
             if config.cargo_audit().debug() {
                 println!("\n\naudit result for {}:", path.display());
@@ -205,14 +206,14 @@ pub async fn audit_binaries(config: &Config, paths: &[PathBuf]) -> ah::Result<Re
                 vulnerable,
                 json: json_part,
                 json_pretty,
-            })
+            });
         }
 
         // Get cargo-audit error text, if any
         let stderr = String::from_utf8(out.stderr)
-            .map_err(|e| report.fail(format!("Parse cargo-audit stderr as UTF-8: {}", e)))?;
+            .map_err(|e| report.fail(format!("Parse cargo-audit stderr as UTF-8: {e}")))?;
         if !stderr.trim().is_empty() {
-            report.add_message(format!("cargo-audit stderr:\n{}", stderr));
+            report.add_message(format!("cargo-audit stderr:\n{stderr}"));
         }
     }
 
@@ -248,7 +249,7 @@ mod tests {
         let parts = split_json_parts(input, 10).expect("should split into two objects");
         assert_eq!(parts.len(), 2);
         assert_eq!(parts[0], r#"{"s":"}{"}"#);
-        assert_eq!(parts[1], r#"{}"#);
+        assert_eq!(parts[1], r"{}");
     }
 
     #[test]
@@ -267,14 +268,14 @@ mod tests {
 
     #[test]
     fn mismatched_braces_error() {
-        let input = r#"{"#;
+        let input = r"{";
         let err = split_json_parts(input, 1).unwrap_err();
         assert!(err.to_string().contains("Mismatched braces"));
     }
 
     #[test]
     fn trailing_garbage_error() {
-        let input = r#"{} garbage"#;
+        let input = r"{} garbage";
         let err = split_json_parts(input, 1).unwrap_err();
         assert!(err.to_string().contains("Trailing garbage"));
     }
