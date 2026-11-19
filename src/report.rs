@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 // Copyright (C) 2026 Michael Büsch <m@bues.ch>
 
-use chrono::{DateTime, Utc};
 use std::path::PathBuf;
+use time::{UtcDateTime, format_description::parse_strftime_borrowed};
 
 pub mod command;
 pub mod file;
@@ -17,9 +17,9 @@ pub struct ReportEntry {
     pub json_pretty: String,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct Report {
-    stamp: DateTime<Utc>,
+    stamp: UtcDateTime,
     entries: Vec<ReportEntry>,
     messages: Vec<String>,
     failed: bool,
@@ -29,7 +29,7 @@ pub struct Report {
 impl Report {
     pub fn new() -> Self {
         Self {
-            stamp: Utc::now(),
+            stamp: UtcDateTime::now(),
             entries: Vec::with_capacity(32),
             messages: Vec::with_capacity(8),
             failed: false,
@@ -72,7 +72,9 @@ impl Report {
 
 impl std::fmt::Display for Report {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let date = self.stamp.format("%Y-%m-%d %H:%M:%S %:z");
+        let format =
+            parse_strftime_borrowed("%Y-%m-%d %H:%M:%S %:z").map_err(|_| std::fmt::Error)?;
+        let date = self.stamp.format(&format).map_err(|_| std::fmt::Error)?;
 
         // Summary
         writeln!(f, "[{date}]")?;
