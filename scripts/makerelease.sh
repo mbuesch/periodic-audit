@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 basedir="$(dirname "$(realpath "$0")")"
-srcdir="$srcdir/.."
+srcdir="$basedir/.."
 
 # Import the makerelease.lib
 # https://bues.ch/cgit/misc.git/tree/makerelease.lib
