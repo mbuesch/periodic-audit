@@ -73,7 +73,7 @@ impl Report {
 impl std::fmt::Display for Report {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let format =
-            parse_strftime_borrowed("%Y-%m-%d %H:%M:%S %:z").map_err(|_| std::fmt::Error)?;
+            parse_strftime_borrowed("%Y-%m-%d %H:%M:%S %z").map_err(|_| std::fmt::Error)?;
         let date = self.stamp.format(&format).map_err(|_| std::fmt::Error)?;
 
         // Summary
@@ -105,6 +105,19 @@ impl std::fmt::Display for Report {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn report_formatting() {
+        let report = Report::new();
+        let rendered = format!("{report}");
+        assert!(rendered.starts_with('['));
+        assert!(rendered.contains("Audit results:\n"));
     }
 }
 
